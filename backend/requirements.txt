@@ -1,0 +1,6 @@
+Flask==2.3.3
+Flask-CORS==4.0.0
+pymongo==4.5.0
+Werkzeug==2.3.7
+reportlab==4.0.4
+tldextract==3.6.0
