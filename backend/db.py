@@ -67,6 +67,19 @@ def change_scan_status(scan_id):
     else:
         print("Scan not found.")
 
+def change_scan_status_to(scan_id, status):
+    """Change status of scan to specific status"""
+    saved_scans_collection = db.saved_scans
+    result = saved_scans_collection.update_one(
+        {'_id': scan_id},
+        {'$set': {'status': status}}
+    )
+    
+    if result.modified_count > 0:
+        print(f"Scan status updated to {status} successfully.")
+    else:
+        print("Scan not found.")
+
 def save_pdf_report(scan_id, pdf_data):
     """Save PDF report binary data to MongoDB."""
     reports_collection = db.pdf_reports
@@ -115,3 +128,14 @@ def delete_scan(scan_id):
     reports_collection.delete_one({"_id": scan_id})
     processed_scans_collection.delete_one({"_id": scan_id})
     scans_collection.delete_one({"_id": scan_id})
+
+def save_scan_logs(scan_id, logs):
+    """Save scan logs to MongoDB."""
+    logs_collection = db.scan_logs
+    logs_collection.insert_one({'_id': scan_id, 'logs': logs})
+
+def get_scan_logs_from_db(scan_id):
+    """Retrieve scan logs from MongoDB."""
+    logs_collection = db.scan_logs
+    result = logs_collection.find_one({'_id': scan_id})
+    return result['logs'] if result else []

@@ -31,20 +31,20 @@ const NewScan: React.FC = () => {
     {
       icon: Globe,
       title: 'Web Application Scan',
-      description: 'Comprehensive security assessment of web applications',
-      features: ['Port scanning', 'Technology detection', 'WordPress analysis', 'Subdomain enumeration']
+      description: 'Comprehensive security assessment of web applications with real-time monitoring',
+      features: ['Port scanning', 'Technology detection', 'WordPress analysis', 'Subdomain enumeration', 'Live console output']
     },
     {
       icon: Shield,
       title: 'Network Security Scan',
-      description: 'Deep network infrastructure security analysis',
-      features: ['Service detection', 'Vulnerability assessment', 'Configuration review', 'Security hardening']
+      description: 'Deep network infrastructure security analysis with progress tracking',
+      features: ['Service detection', 'Vulnerability assessment', 'Configuration review', 'Security hardening', 'System monitoring']
     },
     {
       icon: Zap,
       title: 'Quick Security Check',
-      description: 'Fast security overview for immediate insights',
-      features: ['Basic port scan', 'Service identification', 'Common vulnerabilities', 'Quick reporting']
+      description: 'Fast security overview with instant feedback and debugging capabilities',
+      features: ['Basic port scan', 'Service identification', 'Common vulnerabilities', 'Quick reporting', 'Error tracking']
     }
   ];
 
@@ -63,7 +63,8 @@ const NewScan: React.FC = () => {
           Start New Security Scan
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto">
-          Launch a comprehensive security assessment to identify vulnerabilities and strengthen your digital assets
+          Launch a comprehensive security assessment with real-time monitoring, live console output, 
+          and advanced debugging capabilities
         </p>
       </div>
 
@@ -134,6 +135,49 @@ const NewScan: React.FC = () => {
         </form>
       </motion.div>
 
+      {/* Enhanced Features */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200/60"
+      >
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">🚀 New Real-time Features</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-2">
+              <span className="text-white text-xl">📺</span>
+            </div>
+            <h4 className="font-medium text-slate-900">Live Console</h4>
+            <p className="text-sm text-slate-600">Real-time command output</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-2">
+              <span className="text-white text-xl">📊</span>
+            </div>
+            <h4 className="font-medium text-slate-900">Progress Tracking</h4>
+            <p className="text-sm text-slate-600">Dynamic progress bars</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mx-auto mb-2">
+              <span className="text-white text-xl">🔧</span>
+            </div>
+            <h4 className="font-medium text-slate-900">System Monitor</h4>
+            <p className="text-sm text-slate-600">Resource usage tracking</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center mx-auto mb-2">
+              <span className="text-white text-xl">🐛</span>
+            </div>
+            <h4 className="font-medium text-slate-900">Debug Logs</h4>
+            <p className="text-sm text-slate-600">Advanced error tracking</p>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Scan Types */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {scanTypes.map((scanType, index) => {
@@ -143,7 +187,7 @@ const NewScan: React.FC = () => {
               key={index}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + index * 0.1 }}
+              transition={{ delay: 0.4 + index * 0.1 }}
               className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/60 hover:shadow-xl transition-all duration-300"
             >
               <div className="flex items-center mb-4">
@@ -172,7 +216,7 @@ const NewScan: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        transition={{ delay: 0.7 }}
         className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl p-6"
       >
         <div className="flex items-start">
@@ -182,7 +226,7 @@ const NewScan: React.FC = () => {
             <p className="text-amber-800 text-sm leading-relaxed">
               Only scan systems you own or have explicit permission to test. Unauthorized scanning may violate 
               terms of service and applicable laws. All scan data is encrypted and stored securely in compliance 
-              with industry standards.
+              with industry standards. Real-time monitoring ensures complete transparency of all operations.
             </p>
           </div>
         </div>
