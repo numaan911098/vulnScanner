@@ -24,6 +24,7 @@ services:
       - ./backend:/app
     networks:
       - app-network
+    restart: unless-stopped
 
   frontend:
     build: .
@@ -35,6 +36,7 @@ services:
       - /app/node_modules
     networks:
       - app-network
+    restart: unless-stopped
 
 volumes:
   mongodb_data:

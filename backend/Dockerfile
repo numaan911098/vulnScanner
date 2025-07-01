@@ -1,39 +1,45 @@
-FROM python:3.9-slim
+FROM kalilinux/kali-rolling
 
 WORKDIR /app
 
-# Install system dependencies for security tools
+# Update package list and install required tools
 RUN apt-get update && apt-get install -y \
     nmap \
+    whatweb \
+    wpscan \
+    python3 \
+    python3-pip \
     curl \
     wget \
     git \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install WhatWeb
-RUN git clone https://github.com/urbanadventurer/WhatWeb.git /opt/whatweb
-RUN ln -s /opt/whatweb/whatweb /usr/local/bin/whatweb
-
-# Install WPScan
-RUN apt-get update && apt-get install -y ruby ruby-dev build-essential
-RUN gem install wpscan
-
-# Install assetfinder and httpx
-RUN wget -O /tmp/assetfinder.tar.gz https://github.com/tomnomnom/assetfinder/releases/download/v0.1.1/assetfinder-linux-amd64-0.1.1.tgz \
-    && tar -xzf /tmp/assetfinder.tar.gz -C /tmp \
+# Install assetfinder
+RUN wget -q https://github.com/tomnomnom/assetfinder/releases/download/v0.1.1/assetfinder-linux-amd64-0.1.1.tgz -O /tmp/assetfinder.tgz \
+    && tar -xzf /tmp/assetfinder.tgz -C /tmp \
     && mv /tmp/assetfinder /usr/local/bin/ \
-    && chmod +x /usr/local/bin/assetfinder
+    && chmod +x /usr/local/bin/assetfinder \
+    && rm /tmp/assetfinder.tgz
 
-RUN wget -O /tmp/httpx.tar.gz https://github.com/projectdiscovery/httpx/releases/download/v1.3.7/httpx_1.3.7_linux_amd64.tar.gz \
-    && tar -xzf /tmp/httpx.tar.gz -C /tmp \
+# Install httpx (using correct URL)
+RUN wget -q https://github.com/projectdiscovery/httpx/releases/download/v1.6.8/httpx_1.6.8_linux_amd64.zip -O /tmp/httpx.zip \
+    && apt-get update && apt-get install -y unzip \
+    && unzip /tmp/httpx.zip -d /tmp \
     && mv /tmp/httpx /usr/local/bin/ \
-    && chmod +x /usr/local/bin/httpx
+    && chmod +x /usr/local/bin/httpx \
+    && rm /tmp/httpx.zip \
+    && apt-get remove -y unzip \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY . .
 
 EXPOSE 5000
 
-CMD ["python", "app.py"]
+CMD ["python3", "app.py"]
