@@ -35,7 +35,7 @@ RUN wget -q https://github.com/tomnomnom/assetfinder/releases/download/v0.1.1/as
     && chmod +x /usr/local/bin/assetfinder \
     && rm /tmp/assetfinder.tgz
 
-# Install httpx
+# Install httpx - using the correct version and URL
 RUN wget -q https://github.com/projectdiscovery/httpx/releases/download/v1.6.8/httpx_1.6.8_linux_amd64.zip -O /tmp/httpx.zip \
     && unzip /tmp/httpx.zip -d /tmp \
     && mv /tmp/httpx /usr/local/bin/ \

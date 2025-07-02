@@ -1,5 +1,4 @@
 import socketio
-import asyncio
 import threading
 import time
 import json
@@ -13,18 +12,13 @@ logger = logging.getLogger(__name__)
 
 class WebSocketManager:
     def __init__(self):
-        # Use threading mode instead of eventlet for better compatibility
-        self.sio = socketio.Server(
-            cors_allowed_origins="*",
-            async_mode='threading',
-            logger=True,
-            engineio_logger=True
-        )
         self.active_scans: Dict[str, dict] = {}
         self.scan_logs: Dict[str, List[dict]] = {}
+        # Don't initialize socketio here - it will be handled by Flask-SocketIO
         
     def get_socketio_instance(self):
-        return self.sio
+        # Return None since we're using Flask-SocketIO directly
+        return None
     
     def emit_log(self, scan_id: str, log_type: str, message: str, command: str = None):
         """Emit a log message to connected clients"""
@@ -41,9 +35,14 @@ class WebSocketManager:
             self.scan_logs[scan_id] = []
         self.scan_logs[scan_id].append(log_entry)
         
-        # Emit to clients
-        self.sio.emit('scan_log', log_entry, room=f'scan_{scan_id}')
-        logger.info(f"Emitted log for scan {scan_id}: {message}")
+        # Emit to clients using Flask-SocketIO
+        try:
+            from flask_socketio import emit
+            emit('scan_log', log_entry, room=f'scan_{scan_id}', namespace='/')
+        except Exception as e:
+            logger.warning(f"Could not emit log: {e}")
+        
+        logger.info(f"Stored log for scan {scan_id}: {message}")
     
     def emit_progress(self, scan_id: str, progress: dict):
         """Emit progress update to connected clients"""
@@ -57,8 +56,13 @@ class WebSocketManager:
         if scan_id in self.active_scans:
             self.active_scans[scan_id].update(progress_data)
         
-        self.sio.emit('scan_progress', progress_data, room=f'scan_{scan_id}')
-        logger.info(f"Emitted progress for scan {scan_id}: {progress}")
+        try:
+            from flask_socketio import emit
+            emit('scan_progress', progress_data, room=f'scan_{scan_id}', namespace='/')
+        except Exception as e:
+            logger.warning(f"Could not emit progress: {e}")
+        
+        logger.info(f"Stored progress for scan {scan_id}: {progress}")
     
     def emit_error(self, scan_id: str, error: str, stack_trace: str = None):
         """Emit error message to connected clients"""
@@ -69,8 +73,13 @@ class WebSocketManager:
             'stack_trace': stack_trace
         }
         
-        self.sio.emit('scan_error', error_data, room=f'scan_{scan_id}')
-        logger.error(f"Emitted error for scan {scan_id}: {error}")
+        try:
+            from flask_socketio import emit
+            emit('scan_error', error_data, room=f'scan_{scan_id}', namespace='/')
+        except Exception as e:
+            logger.warning(f"Could not emit error: {e}")
+        
+        logger.error(f"Stored error for scan {scan_id}: {error}")
     
     def start_scan_session(self, scan_id: str, scan_config: dict):
         """Initialize a new scan session"""

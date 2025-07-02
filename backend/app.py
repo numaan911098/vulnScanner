@@ -10,8 +10,6 @@ from filter import parse_nmap_results, filter_whatweb_scan, parse_wp_results, fi
 from flask_cors import CORS
 from auth import auth
 from report import convert_scan_data_to_pdf
-from websocket_manager import websocket_manager
-from scan_engine import scan_engine
 import logging
 
 # Configure logging
@@ -34,8 +32,9 @@ socketio = SocketIO(
     engineio_logger=True
 )
 
-# Use the websocket manager's socketio instance
-socketio.server = websocket_manager.get_socketio_instance()
+# Import after socketio initialization to avoid circular imports
+from websocket_manager import websocket_manager
+from scan_engine import scan_engine
 
 app.register_blueprint(auth, url_prefix='/auth')
 
@@ -270,4 +269,5 @@ def delete_scan_route():
 
 if __name__ == '__main__':
     logger.info('Starting VulnScanner backend with WebSocket support')
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    # Add allow_unsafe_werkzeug=True to disable the production warning
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
