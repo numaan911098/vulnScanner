@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, make_response
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import threading
 import uuid
-import asyncio
 import json
 from datetime import datetime
 from db import get_processed_results, save_processed_results, save_scan_results, save_scan_data, get_saved_scans, change_scan_status, save_pdf_report, get_reports, get_pdf_report, get_scan_info, delete_scan
@@ -26,17 +25,17 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 CORS(app, origins=["http://localhost:5173"])
 
-# Initialize SocketIO with the websocket manager
+# Initialize SocketIO with threading mode
 socketio = SocketIO(
     app, 
     cors_allowed_origins=["http://localhost:5173"],
-    async_mode='eventlet',
+    async_mode='threading',
     logger=True,
     engineio_logger=True
 )
 
-# Register the websocket manager's socketio instance
-socketio.server = websocket_manager.get_socketio_instance().server
+# Use the websocket manager's socketio instance
+socketio.server = websocket_manager.get_socketio_instance()
 
 app.register_blueprint(auth, url_prefix='/auth')
 
@@ -79,19 +78,13 @@ def handle_system_resources():
     resources = scan_engine.get_system_resources()
     emit('system_resources', resources)
 
-def run_async_scan(target, scan_id, scan_config):
-    """Run async scan in a separate thread"""
-    def run_in_thread():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(scan_engine.run_full_scan(scan_id, target, scan_config))
-        finally:
-            loop.close()
-    
-    thread = threading.Thread(target=run_in_thread)
-    thread.daemon = True
-    thread.start()
+def run_scan_in_thread(target, scan_id, scan_config):
+    """Run scan in a separate thread"""
+    try:
+        scan_engine.run_full_scan_sync(scan_id, target, scan_config)
+    except Exception as e:
+        logger.error(f'Error in scan thread: {str(e)}')
+        websocket_manager.emit_error(scan_id, str(e))
 
 @app.route('/start-active-scan', methods=['POST'])
 def start_active_scan():
@@ -118,8 +111,10 @@ def start_active_scan():
         }
         save_scan_data(scan_data)
         
-        # Start async scan
-        run_async_scan(target, scan_id, scan_config)
+        # Start scan in thread
+        thread = threading.Thread(target=run_scan_in_thread, args=(target, scan_id, scan_config))
+        thread.daemon = True
+        thread.start()
         
         logger.info(f'Started scan {scan_id} for target {target}')
         return jsonify({'scan_id': scan_id, 'status': 'pending'}), 202

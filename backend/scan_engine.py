@@ -1,4 +1,3 @@
-import asyncio
 import subprocess
 import time
 import json
@@ -24,10 +23,10 @@ class ScanEngine:
             {'name': 'Subdomain Enumeration', 'weight': 25, 'function': 'find_subdomains'}
         ]
     
-    async def run_command_with_logging(self, scan_id: str, command: List[str], phase_name: str) -> str:
+    def run_command_with_logging(self, scan_id: str, command: List[str], phase_name: str) -> str:
         """Run a command with real-time logging"""
         try:
-            await websocket_manager.emit_log(
+            websocket_manager.emit_log(
                 scan_id, 'INFO', 
                 f'Executing: {" ".join(command)}', 
                 command=" ".join(command)
@@ -54,7 +53,7 @@ class ScanEngine:
                     output_lines.append(line)
                     
                     # Emit real-time output
-                    await websocket_manager.emit_log(
+                    websocket_manager.emit_log(
                         scan_id, 'OUTPUT', 
                         line, 
                         command=" ".join(command)
@@ -65,11 +64,11 @@ class ScanEngine:
             
             if return_code != 0:
                 error_msg = f"Command failed with return code {return_code}"
-                await websocket_manager.emit_log(scan_id, 'ERROR', error_msg)
+                websocket_manager.emit_log(scan_id, 'ERROR', error_msg)
                 raise subprocess.CalledProcessError(return_code, command)
             
             result = '\n'.join(output_lines)
-            await websocket_manager.emit_log(
+            websocket_manager.emit_log(
                 scan_id, 'SUCCESS', 
                 f'Command completed successfully. Output length: {len(result)} characters'
             )
@@ -78,11 +77,11 @@ class ScanEngine:
             
         except Exception as e:
             error_msg = f"Error executing command: {str(e)}"
-            await websocket_manager.emit_log(scan_id, 'ERROR', error_msg)
-            await websocket_manager.emit_error(scan_id, error_msg, traceback.format_exc())
+            websocket_manager.emit_log(scan_id, 'ERROR', error_msg)
+            websocket_manager.emit_error(scan_id, error_msg, traceback.format_exc())
             raise
     
-    async def update_progress(self, scan_id: str, phase_index: int, phase_progress: float):
+    def update_progress(self, scan_id: str, phase_index: int, phase_progress: float):
         """Update scan progress"""
         total_progress = 0
         
@@ -114,38 +113,38 @@ class ScanEngine:
                     'elapsed_time': round(elapsed_time)
                 }
                 
-                await websocket_manager.emit_progress(scan_id, progress_data)
+                websocket_manager.emit_progress(scan_id, progress_data)
     
-    async def run_scan_phase(self, scan_id: str, target: str, phase_index: int):
+    def run_scan_phase(self, scan_id: str, target: str, phase_index: int):
         """Run a specific scan phase"""
         phase = self.scan_phases[phase_index]
         phase_name = phase['name']
         
-        await websocket_manager.emit_log(
+        websocket_manager.emit_log(
             scan_id, 'INFO', 
             f'Starting phase: {phase_name}'
         )
         
         try:
             # Update progress to show phase start
-            await self.update_progress(scan_id, phase_index, 0)
+            self.update_progress(scan_id, phase_index, 0)
             
             # Run the appropriate scan function
             if phase['function'] == 'run_nmap_scan':
-                result = await self.run_nmap_with_progress(scan_id, target, phase_index)
+                result = self.run_nmap_with_progress(scan_id, target, phase_index)
             elif phase['function'] == 'run_whatweb_scan':
-                result = await self.run_whatweb_with_progress(scan_id, target, phase_index)
+                result = self.run_whatweb_with_progress(scan_id, target, phase_index)
             elif phase['function'] == 'run_wpscan':
-                result = await self.run_wpscan_with_progress(scan_id, target, phase_index)
+                result = self.run_wpscan_with_progress(scan_id, target, phase_index)
             elif phase['function'] == 'find_subdomains':
-                result = await self.run_subdomains_with_progress(scan_id, target, phase_index)
+                result = self.run_subdomains_with_progress(scan_id, target, phase_index)
             else:
                 result = ""
             
             # Update progress to show phase completion
-            await self.update_progress(scan_id, phase_index, 100)
+            self.update_progress(scan_id, phase_index, 100)
             
-            await websocket_manager.emit_log(
+            websocket_manager.emit_log(
                 scan_id, 'SUCCESS', 
                 f'Completed phase: {phase_name}'
             )
@@ -154,48 +153,48 @@ class ScanEngine:
             
         except Exception as e:
             error_msg = f"Error in phase {phase_name}: {str(e)}"
-            await websocket_manager.emit_log(scan_id, 'ERROR', error_msg)
-            await websocket_manager.emit_error(scan_id, error_msg, traceback.format_exc())
+            websocket_manager.emit_log(scan_id, 'ERROR', error_msg)
+            websocket_manager.emit_error(scan_id, error_msg, traceback.format_exc())
             raise
     
-    async def run_nmap_with_progress(self, scan_id: str, target: str, phase_index: int) -> str:
+    def run_nmap_with_progress(self, scan_id: str, target: str, phase_index: int) -> str:
         """Run nmap scan with progress updates"""
         import socket
         
         # Resolve domain to IP
         try:
             ip_address = socket.gethostbyname(target)
-            await websocket_manager.emit_log(scan_id, 'INFO', f'Resolved {target} to {ip_address}')
+            websocket_manager.emit_log(scan_id, 'INFO', f'Resolved {target} to {ip_address}')
         except socket.gaierror:
-            await websocket_manager.emit_log(scan_id, 'ERROR', f'Unable to resolve domain: {target}')
+            websocket_manager.emit_log(scan_id, 'ERROR', f'Unable to resolve domain: {target}')
             return "Unable to resolve domain to IP address."
         
         command = ['nmap', '-sV', ip_address, '-n', '-T4', '-F', '--min-rate', '1000']
         
         # Simulate progress updates during scan
-        await self.update_progress(scan_id, phase_index, 25)
+        self.update_progress(scan_id, phase_index, 25)
         
-        result = await self.run_command_with_logging(scan_id, command, 'Network Discovery')
+        result = self.run_command_with_logging(scan_id, command, 'Network Discovery')
         
-        await self.update_progress(scan_id, phase_index, 100)
+        self.update_progress(scan_id, phase_index, 100)
         return result
     
-    async def run_whatweb_with_progress(self, scan_id: str, target: str, phase_index: int) -> str:
+    def run_whatweb_with_progress(self, scan_id: str, target: str, phase_index: int) -> str:
         """Run whatweb scan with progress updates"""
         command = ['whatweb', target]
         
-        await self.update_progress(scan_id, phase_index, 50)
+        self.update_progress(scan_id, phase_index, 50)
         
-        result = await self.run_command_with_logging(scan_id, command, 'Web Technology Detection')
+        result = self.run_command_with_logging(scan_id, command, 'Web Technology Detection')
         
         # Clean ANSI escape codes
         import re
         clean_result = re.sub(r'\033\[[0-9;]*[mK]', '', result)
         
-        await self.update_progress(scan_id, phase_index, 100)
+        self.update_progress(scan_id, phase_index, 100)
         return clean_result
     
-    async def run_wpscan_with_progress(self, scan_id: str, target: str, phase_index: int) -> str:
+    def run_wpscan_with_progress(self, scan_id: str, target: str, phase_index: int) -> str:
         """Run wpscan with progress updates"""
         command = [
             'wpscan', '--url', target, '--random-user-agent', 
@@ -204,18 +203,18 @@ class ScanEngine:
         ]
         
         # Update progress during different phases of wpscan
-        await self.update_progress(scan_id, phase_index, 20)
+        self.update_progress(scan_id, phase_index, 20)
         
-        result = await self.run_command_with_logging(scan_id, command, 'WordPress Analysis')
+        result = self.run_command_with_logging(scan_id, command, 'WordPress Analysis')
         
         # Clean ANSI escape codes
         import re
         clean_result = re.sub(r'\033\[[0-9;]*[mK]', '', result)
         
-        await self.update_progress(scan_id, phase_index, 100)
+        self.update_progress(scan_id, phase_index, 100)
         return clean_result
     
-    async def run_subdomains_with_progress(self, scan_id: str, target: str, phase_index: int) -> List[str]:
+    def run_subdomains_with_progress(self, scan_id: str, target: str, phase_index: int) -> List[str]:
         """Run subdomain enumeration with progress updates"""
         import tldextract
         
@@ -223,19 +222,19 @@ class ScanEngine:
         extracted = tldextract.extract(target)
         normalized_domain = f"{extracted.domain}.{extracted.suffix}"
         
-        await websocket_manager.emit_log(scan_id, 'INFO', f'Finding subdomains for: {normalized_domain}')
+        websocket_manager.emit_log(scan_id, 'INFO', f'Finding subdomains for: {normalized_domain}')
         
         # Find subdomains
-        await self.update_progress(scan_id, phase_index, 30)
+        self.update_progress(scan_id, phase_index, 30)
         
         find_command = ['assetfinder', '--subs-only', normalized_domain]
-        subdomains_output = await self.run_command_with_logging(scan_id, find_command, 'Subdomain Discovery')
+        subdomains_output = self.run_command_with_logging(scan_id, find_command, 'Subdomain Discovery')
         subdomains = subdomains_output.strip().split('\n') if subdomains_output.strip() else []
         
-        await websocket_manager.emit_log(scan_id, 'INFO', f'Found {len(subdomains)} potential subdomains')
+        websocket_manager.emit_log(scan_id, 'INFO', f'Found {len(subdomains)} potential subdomains')
         
         # Check which subdomains are alive
-        await self.update_progress(scan_id, phase_index, 60)
+        self.update_progress(scan_id, phase_index, 60)
         
         alive_subdomains = []
         for i, subdomain in enumerate(subdomains):
@@ -255,28 +254,28 @@ class ScanEngine:
                     
                     if stdout.strip():
                         alive_subdomains.append(subdomain.strip())
-                        await websocket_manager.emit_log(
+                        websocket_manager.emit_log(
                             scan_id, 'SUCCESS', 
                             f'Alive subdomain found: {subdomain.strip()}'
                         )
                     
                     # Update progress
                     progress = 60 + (40 * (i + 1) / len(subdomains))
-                    await self.update_progress(scan_id, phase_index, progress)
+                    self.update_progress(scan_id, phase_index, progress)
                     
                 except Exception as e:
-                    await websocket_manager.emit_log(
+                    websocket_manager.emit_log(
                         scan_id, 'WARNING', 
                         f'Error checking subdomain {subdomain}: {str(e)}'
                     )
         
-        await websocket_manager.emit_log(scan_id, 'INFO', f'Found {len(alive_subdomains)} alive subdomains')
-        await self.update_progress(scan_id, phase_index, 100)
+        websocket_manager.emit_log(scan_id, 'INFO', f'Found {len(alive_subdomains)} alive subdomains')
+        self.update_progress(scan_id, phase_index, 100)
         
         return alive_subdomains
     
-    async def run_full_scan(self, scan_id: str, target: str, scan_config: dict):
-        """Run a complete security scan"""
+    def run_full_scan_sync(self, scan_id: str, target: str, scan_config: dict):
+        """Run a complete security scan synchronously"""
         try:
             # Initialize scan session
             self.active_scans[scan_id] = {
@@ -286,7 +285,7 @@ class ScanEngine:
                 'status': 'running'
             }
             
-            await websocket_manager.start_scan_session(scan_id, scan_config)
+            websocket_manager.start_scan_session(scan_id, scan_config)
             
             # Store raw results
             raw_results = {}
@@ -294,10 +293,10 @@ class ScanEngine:
             # Run each scan phase
             for i, phase in enumerate(self.scan_phases):
                 if scan_id not in self.active_scans:  # Check if scan was cancelled
-                    await websocket_manager.emit_log(scan_id, 'WARNING', 'Scan was cancelled')
+                    websocket_manager.emit_log(scan_id, 'WARNING', 'Scan was cancelled')
                     return
                 
-                phase_result = await self.run_scan_phase(scan_id, target, i)
+                phase_result = self.run_scan_phase(scan_id, target, i)
                 
                 # Store raw result
                 if phase['function'] == 'run_nmap_scan':
@@ -310,7 +309,7 @@ class ScanEngine:
                     raw_results['subdomain_raw'] = phase_result
             
             # Process results
-            await websocket_manager.emit_log(scan_id, 'INFO', 'Processing scan results...')
+            websocket_manager.emit_log(scan_id, 'INFO', 'Processing scan results...')
             
             processed_data = {
                 'nmap': parse_nmap_results(raw_results.get('nmap_raw', '')),
@@ -331,13 +330,13 @@ class ScanEngine:
             change_scan_status(scan_id)
             
             # Generate PDF report
-            await websocket_manager.emit_log(scan_id, 'INFO', 'Generating PDF report...')
+            websocket_manager.emit_log(scan_id, 'INFO', 'Generating PDF report...')
             pdf_data = convert_scan_data_to_pdf(raw_results)
             save_pdf_report(scan_id, pdf_data)
             
             # Complete scan
-            await websocket_manager.end_scan_session(scan_id, 'completed')
-            await websocket_manager.emit_log(scan_id, 'SUCCESS', 'Scan completed successfully!')
+            websocket_manager.end_scan_session(scan_id, 'completed')
+            websocket_manager.emit_log(scan_id, 'SUCCESS', 'Scan completed successfully!')
             
             # Clean up
             if scan_id in self.active_scans:
@@ -345,9 +344,9 @@ class ScanEngine:
                 
         except Exception as e:
             error_msg = f"Scan failed: {str(e)}"
-            await websocket_manager.emit_log(scan_id, 'ERROR', error_msg)
-            await websocket_manager.emit_error(scan_id, error_msg, traceback.format_exc())
-            await websocket_manager.end_scan_session(scan_id, 'failed')
+            websocket_manager.emit_log(scan_id, 'ERROR', error_msg)
+            websocket_manager.emit_error(scan_id, error_msg, traceback.format_exc())
+            websocket_manager.end_scan_session(scan_id, 'failed')
             
             # Clean up
             if scan_id in self.active_scans:
